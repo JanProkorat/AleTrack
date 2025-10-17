@@ -107,7 +107,7 @@ public sealed class Product : PublicEntity
             return Kind switch
             {
                 ProductKind.Bottle when PackageSize == BottleSize.TenLiters => PackageWeight.TwentyKilos,
-                ProductKind.Keg when PackageSize == KegSize.FifTeenLiters => PackageWeight.TwentyKilos,
+                ProductKind.Keg when PackageSize == KegSize.FifteenLiters => PackageWeight.TwentyKilos,
                 ProductKind.Keg when PackageSize == KegSize.ThirtyLiters => PackageWeight.FortyTwoKilos,
                 ProductKind.Keg when PackageSize == KegSize.FiftyLiters => PackageWeight.SixtyTwoKilos,
                 _ => null
