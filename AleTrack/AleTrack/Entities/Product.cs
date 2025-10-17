@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics;
 using AleTrack.Common.Enums;
 using AleTrack.Entities.BaseEntities;
 using AleTrack.Features.Products.Utils;
