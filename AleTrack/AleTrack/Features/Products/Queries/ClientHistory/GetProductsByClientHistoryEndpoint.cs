@@ -98,10 +98,6 @@ public sealed class GetProductsByClientHistoryEndpoint(AleTrackDbContext dbConte
             .ThenBy(p => p.Name)
             .ToList();
 
-        orderedData = orderedData
-            .GroupBy(p => p.Id)
-            .Select(g => g.First())
-            .ToList();
         
         // Recent = všechny produkty, které klient již někdy objednal (OrderCount > 0), seřazené dle frekvence a jména
         var recent = orderedData
