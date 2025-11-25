@@ -1,7 +1,6 @@
 using AleTrack.Common.Enums;
 using AleTrack.Entities;
 using AleTrack.Features.Products.Queries.ClientHistory;
-using AleTrack.Features.Products.Queries.List;
 using AleTrack.Tests.Builders;
 using AleTrack.Tests.Mocks;
 using FluentAssertions;
@@ -148,8 +147,8 @@ public sealed class GetProductsByClientHistoryTests
             ClientId = clientId
         };
 
-        var endpoint = EndpointWithResponseBuilder<GetProductsByClientHistoryRequest, 
-            List<ProductListItemDto>, GetProductsByClientHistoryEndpoint>
+        var endpoint = EndpointWithResponseBuilder<GetProductsByClientHistoryRequest,
+            GroupedProductHistoryDto, GetProductsByClientHistoryEndpoint>
             .Create(dbContext.Object);
 
         // Act
@@ -158,19 +157,19 @@ public sealed class GetProductsByClientHistoryTests
         // Assert
         var response = endpoint.Response;
         response.Should().NotBeNull();
-        response.Should().HaveCount(3);
+        response.Recent.Should().HaveCount(3);
 
         // Product 2 should be first (ordered 3 times)
-        response![0].Name.Should().Be("Product B");
-        response[0].Id.Should().Be(product2.PublicId);
+        response.Recent[0].Name.Should().Be("Product B");
+        response.Recent[0].Id.Should().Be(product2.PublicId);
 
         // Product 1 should be second (ordered 2 times)
-        response[1].Name.Should().Be("Product A");
-        response[1].Id.Should().Be(product1.PublicId);
+        response.Recent[1].Name.Should().Be("Product A");
+        response.Recent[1].Id.Should().Be(product1.PublicId);
 
         // Product 3 should be last (ordered 1 time)
-        response[2].Name.Should().Be("Product C");
-        response[2].Id.Should().Be(product3.PublicId);
+        response.Recent[2].Name.Should().Be("Product C");
+        response.Recent[2].Id.Should().Be(product3.PublicId);
     }
 
     [Fact]
@@ -211,8 +210,8 @@ public sealed class GetProductsByClientHistoryTests
             ClientId = clientId
         };
 
-        var endpoint = EndpointWithResponseBuilder<GetProductsByClientHistoryRequest, 
-            List<ProductListItemDto>, GetProductsByClientHistoryEndpoint>
+        var endpoint = EndpointWithResponseBuilder<GetProductsByClientHistoryRequest,
+            GroupedProductHistoryDto, GetProductsByClientHistoryEndpoint>
             .Create(dbContext.Object);
 
         // Act
@@ -221,11 +220,20 @@ public sealed class GetProductsByClientHistoryTests
         // Assert
         var response = endpoint.Response;
         response.Should().NotBeNull();
-        response.Should().HaveCount(2);
 
-        // Products should be ordered alphabetically by name since no orders exist
-        response![0].Name.Should().Be("Alpha Beer");
-        response[1].Name.Should().Be("Zulu Beer");
+        // For client with no orders, Recent should be empty
+        response.Recent.Should().BeEmpty();
+
+        // All products should be present in Breweries groups, ordered by name
+        var allProducts = response.Breweries
+            .SelectMany(b => b.Kinds)
+            .SelectMany(k => k.PackageSizes)
+            .SelectMany(ps => ps.Items)
+            .ToList();
+
+        allProducts.Should().HaveCount(2);
+        allProducts[0].Name.Should().Be("Alpha Beer");
+        allProducts[1].Name.Should().Be("Zulu Beer");
     }
 
     [Fact]
@@ -306,8 +314,8 @@ public sealed class GetProductsByClientHistoryTests
             }
         };
 
-        var endpoint = EndpointWithResponseBuilder<GetProductsByClientHistoryRequest, 
-            List<ProductListItemDto>, GetProductsByClientHistoryEndpoint>
+        var endpoint = EndpointWithResponseBuilder<GetProductsByClientHistoryRequest,
+            GroupedProductHistoryDto, GetProductsByClientHistoryEndpoint>
             .Create(dbContext.Object);
 
         // Act
@@ -316,8 +324,18 @@ public sealed class GetProductsByClientHistoryTests
         // Assert
         var response = endpoint.Response;
         response.Should().NotBeNull();
-        response.Should().HaveCount(1);
-        response![0].Name.Should().Be("Product A");
-        response[0].Kind.Should().Be(ProductKind.Bottle);
+
+        // Only bottle products should appear in Recent (and Breweries should not contain filtered-out products)
+        response.Recent.Should().HaveCount(1);
+        response.Recent[0].Name.Should().Be("Product A");
+        response.Recent[0].Kind.Should().Be(ProductKind.Bottle);
+
+        var allProductsInBreweries = response.Breweries
+            .SelectMany(b => b.Kinds)
+            .SelectMany(k => k.PackageSizes)
+            .SelectMany(ps => ps.Items)
+            .ToList();
+
+        allProductsInBreweries.Should().OnlyContain(p => p.Kind == ProductKind.Bottle);
     }
 }

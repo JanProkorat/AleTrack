@@ -27,7 +27,7 @@ public sealed record GetProductsByClientHistoryRequest : FilterableRequest
 /// It requires the user to have the "User" role and handles requests with filtering and sorting capabilities passed via query parameters.
 /// Products that were ordered most frequently in the client's previous orders appear first in the list.
 /// </remarks>
-public sealed class GetProductsByClientHistoryEndpoint(AleTrackDbContext dbContext) : Endpoint<GetProductsByClientHistoryRequest, List<ProductListItemDto>>
+public sealed class GetProductsByClientHistoryEndpoint(AleTrackDbContext dbContext) : Endpoint<GetProductsByClientHistoryRequest, GroupedProductHistoryDto>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -51,17 +51,12 @@ public sealed class GetProductsByClientHistoryEndpoint(AleTrackDbContext dbConte
     {
         // Get all products with their order counts in a single query
         var productsWithOrderCounts = await dbContext.Products
-            .GroupJoin(
-                dbContext.Orders
-                    .Where(o => o.Client.PublicId == req.ClientId)
-                    .SelectMany(o => o.OrderItems),
-                p => p.Id,
-                oi => oi.ProductId,
-                (p, orderItems) => new
-                {
-                    Product = p,
-                    OrderCount = orderItems.Count()
-                })
+            .Select(p => new
+            {
+                Product = p,
+                OrderCount = dbContext.OrderItems
+                    .Count(oi => oi.ProductId == p.Id && oi.Order.Client.PublicId == req.ClientId)
+            })
             .Select(x => new
             {
                 Dto = new ProductListItemDto
@@ -102,7 +97,56 @@ public sealed class GetProductsByClientHistoryEndpoint(AleTrackDbContext dbConte
             .OrderByDescending(p => orderCountLookup.GetValueOrDefault(p.Id, 0))
             .ThenBy(p => p.Name)
             .ToList();
+
+        orderedData = orderedData
+            .GroupBy(p => p.Id)
+            .Select(g => g.First())
+            .ToList();
         
-        await SendAsync(orderedData, cancellation: ct);
+        // Recent = všechny produkty, které klient již někdy objednal (OrderCount > 0), seřazené dle frekvence a jména
+        var recent = orderedData
+            .Where(p => orderCountLookup.GetValueOrDefault(p.Id, 0) > 0)
+            .ToList();
+        
+        // ID produktů v recent sekci pro vyloučení z breweries
+        var recentProductIds = recent.Select(p => p.Id).ToHashSet();
+        
+        // Produkty, které klient ještě nikdy neobjednal, zůstanou v breweries
+        var remainingProducts = orderedData
+            .Where(p => !recentProductIds.Contains(p.Id))
+            .ToList();
+
+        var breweries = remainingProducts
+            .GroupBy(p => new { p.BreweryId, p.BreweryName })
+            .Select(b => new BreweryGroupDto
+            {
+                BreweryId = b.Key.BreweryId,
+                BreweryName = b.Key.BreweryName,
+                Kinds = b.GroupBy(x => x.Kind)
+                    .Select(k => new KindGroupDto
+                    {
+                        Kind = k.Key,
+                        PackageSizes = k.GroupBy(x => x.PackageSize)
+                            .Select(ps => new PackageGroupDto
+                            {
+                                Size = ps.Key,
+                                Items = ps.ToList()
+                            })
+                            .OrderBy(x => x.Size)
+                            .ToList()
+                    })
+                    .OrderBy(x => x.Kind)
+                    .ToList()
+            })
+            .OrderBy(x => x.BreweryName)
+            .ToList();
+
+        var response = new GroupedProductHistoryDto
+        {
+            Recent = recent,
+            Breweries = breweries
+        };
+
+        await SendAsync(response, cancellation: ct);
     }
 }
