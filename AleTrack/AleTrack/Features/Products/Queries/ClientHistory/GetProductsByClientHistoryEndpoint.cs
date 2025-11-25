@@ -111,7 +111,7 @@ public sealed class GetProductsByClientHistoryEndpoint(AleTrackDbContext dbConte
         // ID produktů v recent sekci pro vyloučení z breweries
         var recentProductIds = recent.Select(p => p.Id).ToHashSet();
         
-        // Produkty, které klient ještě nikdy neobjednal, zůstanou v breweries
+        // Products that the client has never ordered remain in breweries
         var remainingProducts = orderedData
             .Where(p => !recentProductIds.Contains(p.Id))
             .ToList();
