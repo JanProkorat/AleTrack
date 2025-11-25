@@ -50,12 +50,19 @@ public sealed class GetProductsByClientHistoryEndpoint(AleTrackDbContext dbConte
     public override async Task HandleAsync(GetProductsByClientHistoryRequest req, CancellationToken ct)
     {
         // Get all products with their order counts in a single query
+        // Pre-aggregate order counts for products for the given client
+        var orderCountsByProduct = await dbContext.OrderItems
+            .Where(oi => oi.Order.Client.PublicId == req.ClientId)
+            .GroupBy(oi => oi.ProductId)
+            .Select(g => new { ProductId = g.Key, OrderCount = g.Count() })
+            .ToListAsync(ct);
+
         var productsWithOrderCounts = await dbContext.Products
             .Select(p => new
             {
                 Product = p,
-                OrderCount = dbContext.OrderItems
-                    .Count(oi => oi.ProductId == p.Id && oi.Order.Client.PublicId == req.ClientId)
+                OrderCount = orderCountsByProduct
+                    .FirstOrDefault(x => x.ProductId == p.Id)?.OrderCount ?? 0
             })
             .Select(x => new
             {
