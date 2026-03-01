@@ -52,31 +52,28 @@ public sealed class UpdateClientEndpoint(AleTrackDbContext dbContext) : Endpoint
     /// <inheritdoc />
     public override async Task HandleAsync(UpdateClientRequest req, CancellationToken ct)
     {
-        var client = await dbContext.Clients.FirstOrDefaultAsync(c => c.PublicId == req.Id, ct);
+        var client = await dbContext.Clients
+            .Include(c => c.Contacts)
+            .FirstOrDefaultAsync(c => c.PublicId == req.Id, ct);
         if (client == null)
             ThrowHelper.PublicEntityNotFound(nameof(Client), req.Id);
 
         client!.Name = req.Data.Name;
-        client.OfficialAddress = new Address
-        {
-            StreetName = req.Data.OfficialAddress.StreetName,
-            StreetNumber = req.Data.OfficialAddress.StreetNumber,
-            City = req.Data.OfficialAddress.City,
-            Country = req.Data.OfficialAddress.Country,
-            Zip = req.Data.OfficialAddress.Zip
-        };
+        client.BusinessName = req.Data.BusinessName;
+        client.Region = req.Data.Region;
+        client.OfficialAddress = req.Data.OfficialAddress.ToDbEntity();
 
         if (req.Data.ContactAddress is not null)
-        {
-            client.ContactAddress = new Address
+            client.ContactAddress = req.Data.ContactAddress.ToDbEntity();
+
+        client.Contacts = req.Data.Contacts
+            .Select(c => new ClientContact
             {
-                StreetName = req.Data.ContactAddress.StreetName,
-                StreetNumber = req.Data.ContactAddress.StreetNumber,
-                City = req.Data.ContactAddress.City,
-                Country = req.Data.ContactAddress.Country,
-                Zip = req.Data.ContactAddress.Zip
-            };
-        }
+                Description = c.Description,
+                Type = c.Type,
+                Value = c.Value
+            })
+            .ToList();
         
         await dbContext.SaveChangesAsync(ct);
         await SendNoContentAsync(ct);

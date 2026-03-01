@@ -50,7 +50,8 @@ public sealed class GetOrderDetailEndpoint(AleTrackDbContext dbContext) : Endpoi
             .Select(o => new OrderDto
             {
                 Id = o.PublicId,
-                DeliveryDate = o.DeliveryDate,
+                RequiredDeliveryDate = o.RequiredDeliveryDate,
+                ActualDeliveryDate = o.ActualDeliveryDate,
                 State = o.State,
                 CreatedDate = o.CreatedDate,
                 Client = new ClientInfoDto
@@ -62,9 +63,11 @@ public sealed class GetOrderDetailEndpoint(AleTrackDbContext dbContext) : Endpoi
                     .Select(i => new OrderItemDto
                     {
                         Id = i.PublicId,
+                        OrderId = i.Order.PublicId,
                         Quantity = i.Quantity,
                         ProductId = i.Product.PublicId,
                         ProductName = i.Product.Name,
+                        ReminderState = i.ReminderState
                     })
                     .ToList()
             })

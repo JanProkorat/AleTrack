@@ -19,6 +19,19 @@ public sealed class Brewery : PublicEntity
     public string Name { get; set; } = null!;
 
     /// <summary>
+    /// Order in which the brewery should be displayed in tabs
+    /// </summary>
+    public int DisplayOrder { get; set; }
+
+    /// <summary>
+    /// Color of the brewery in HEX format (e.g. #FFFFFF for white)
+    /// </summary>
+    [MaxLength(10)]
+    [Required]
+    [Column("color")]
+    public string Color { get; set; } = null!;
+    
+    /// <summary>
     /// Official address of the brewery
     /// </summary>
     public Address OfficialAddress { get; set; } = null!;
@@ -31,5 +44,10 @@ public sealed class Brewery : PublicEntity
     /// <summary>
     /// List of related products
     /// </summary>
-    public ICollection<Product> Products { get; set; } = [];
+    public List<Product> Products { get; set; } = [];
+    
+    /// <summary>
+    /// Related reminders
+    /// </summary>
+    public List<BreweryReminder> Reminders { get; set; } = [];
 }

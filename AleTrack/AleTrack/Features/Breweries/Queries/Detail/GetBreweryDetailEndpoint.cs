@@ -45,27 +45,15 @@ public sealed class GetBreweryDetailEndpoint(AleTrackDbContext dbContext) : Endp
     {
         var breweries = await dbContext.Breweries
             .Where(c => c.PublicId == req.Id)
+            .AsNoTracking()
             .Select(c => new BreweryDto
             {
                 Id = c.PublicId,
                 Name = c.Name,
-                OfficialAddress = new AddressDto
-                {
-                    City = c.OfficialAddress.City,
-                    Country = c.OfficialAddress.Country,
-                    Zip = c.OfficialAddress.Zip,
-                    StreetName = c.OfficialAddress.StreetName,
-                    StreetNumber = c.OfficialAddress.StreetNumber
-                },
+                Color = c.Color,
+                OfficialAddress = c.OfficialAddress.ToDto(),
                 ContactAddress = c.ContactAddress != null
-                    ? new AddressDto
-                    {
-                        City = c.ContactAddress.City,
-                        Country = c.ContactAddress.Country,
-                        Zip = c.ContactAddress.Zip,
-                        StreetName = c.ContactAddress.StreetName,
-                        StreetNumber = c.ContactAddress.StreetNumber
-                    }
+                    ? c.ContactAddress.ToDto()
                     : null
             })
             .FirstOrDefaultAsync(ct);

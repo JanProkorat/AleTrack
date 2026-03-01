@@ -25,7 +25,7 @@ public sealed class GetProductDeliveryListEndpoint(AleTrackDbContext dbContext) 
     /// <inheritdoc />
     public override void Configure()
     {
-        Get("product/deliveries");
+        Get("products/deliveries");
         Description(b => b
             .RequireRole(UserRoleType.User)
             .WithName(nameof(GetProductDeliveryListEndpoint)));
@@ -42,18 +42,25 @@ public sealed class GetProductDeliveryListEndpoint(AleTrackDbContext dbContext) 
     /// <inheritdoc />
     public override async Task HandleAsync(FilterableRequest req, CancellationToken ct)
     {
+        var planningState = req.Parameters.GetPlanningState();
+
         var data = await dbContext.ProductDeliveries
             .Select(d => new ProductDeliveryListItemDto
             {
                 Id = d.PublicId,
                 DeliveryDate = d.Date,
                 State = d.State,
-                NumOfAssignedDrivers = d.Drivers.Count,
-                Vehicle = d.Vehicle != null ? new ProductDeliveryListItemDto.VehicleInfoDto(d.Vehicle.PublicId, d.Vehicle.Name) : null,
+                StopNames = d.Stops
+                    .Select(s => s.Brewery.Name)
+                    .ToList(),
+                PlanningState = d.PlanningState
             })
             .ApplyFilterAndSort(req.Parameters)
             .ToListAsync(ct);
         
+        if (planningState is not null)
+            data = data.Where(o => o.PlanningState == planningState).ToList();
+
         await SendOkAsync(data, cancellation: ct);
     }
 }

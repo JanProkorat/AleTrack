@@ -44,12 +44,10 @@ public sealed class GetBreweriesListEndpoint(AleTrackDbContext dbContext) : Endp
             {
                 Id = c.PublicId,
                 Name = c.Name,
-                City = c.OfficialAddress.City,
-                Country = c.OfficialAddress.Country,
-                Zip = c.OfficialAddress.Zip,
-                StreetName = c.OfficialAddress.StreetName,
-                StreetNumber = c.OfficialAddress.StreetNumber
+                DisplayOrder = c.DisplayOrder,
+                Color = c.Color
             })
+            .OrderBy(c => c.DisplayOrder)
             .ApplyFilterAndSort(req.Parameters)
             .ToListAsync(ct);
         

@@ -52,10 +52,25 @@ public sealed record ProductListItemDto
     /// <summary>
     /// Price for unit with VAT
     /// </summary>
-    public decimal PriceForUnitWithVat { get; set; }
+    public decimal? PriceForUnitWithVat { get; set; }
     
     /// <summary>
     /// Price for unit without VAT
     /// </summary>
-    public decimal PriceForUnitWithoutVat { get; set; }
+    public decimal? PriceForUnitWithoutVat { get; set; }
+    
+    /// <summary>
+    /// Weight of the product in kilograms
+    /// </summary>
+    public double? Weight { get; set; }
+
+    /// <summary>
+    /// Name of the related brewery
+    /// </summary>
+    public string BreweryName { get; set; } = null!;
+    
+    /// <summary>
+    /// ID of the related brewery
+    /// </summary>
+    public Guid BreweryId { get; set; }
 }
