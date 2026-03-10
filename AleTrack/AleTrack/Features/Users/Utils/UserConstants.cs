@@ -1,6 +1,6 @@
 namespace AleTrack.Features.Users.Utils;
 
-public class UserConstants
+public static class UserConstants
 {
     /// <summary>
     /// User name of the admin
