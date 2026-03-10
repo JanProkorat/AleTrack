@@ -184,7 +184,7 @@ public sealed record OutgoingShipmentExtraItemDto
     public double? PackageSize { get; set; }
     
     /// <summary>
-    /// FLag indicating if the loading of the extra item is confirmed
+    /// Flag indicating if the loading of the extra item is confirmed
     /// </summary>
     public bool IsLoadingConfirmed { get; set; }
 }
