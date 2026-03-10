@@ -68,7 +68,8 @@ public class GetOrdersListForOutgoingShipmentsEndpoint(AleTrackDbContext dbConte
                         Kind = oi.Product.Kind,
                         Type = oi.Product.Type,
                         IsShipmentLoadingConfirmed = oi.IsShipmentLoadingConfirmed,
-                        BreweryDisplayOrder = oi.Product.Brewery.DisplayOrder
+                        BreweryDisplayOrder = oi.Product.Brewery.DisplayOrder,
+                        DisplayOrder = oi.Product.DisplayOrder
                     })
                     .ToList()
             })
