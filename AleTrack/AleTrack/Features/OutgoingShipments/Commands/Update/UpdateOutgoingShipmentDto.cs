@@ -65,7 +65,7 @@ public record ExtraShipmentDto
     public string? ProductName { get; set; }
     
     /// <summary>
-    /// FLag indicating if the loading of the order item is confirmed
+    /// Flag indicating if the loading of the order item is confirmed
     /// </summary>
     public bool IsLoadingConfirmed { get; set; }
 }
